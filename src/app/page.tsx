@@ -17,26 +17,27 @@ export default function Home() {
     try {
       const response = await axios.post('/api/scrape', { url })
       const { html, css } = response.data
-      
-  
 
-      const zip = new JSZip()
+      const zip = new JSZip();
       const folder = zip.folder('cloneBoom')
-    
 
-      folder.file('index.html', html)
-      folder.file('style.css', css)
+      if (folder) {
+        folder.file('index.html', html)
+        folder.file('style.css', css)
 
-      //   zip file
-      const content = await zip.generateAsync({ type: 'blob' })
+        // Generate zip file
+        const content = await zip.generateAsync({ type: 'blob' })
 
-      // download
-      const downloadLink = document.createElement('a')
-      downloadLink.href = URL.createObjectURL(content)
-      downloadLink.download = 'cloneBoom.zip'
-      document.body.appendChild(downloadLink)
-      downloadLink.click()
-      document.body.removeChild(downloadLink)
+        // Download
+        const downloadLink = document.createElement('a')
+        downloadLink.href = URL.createObjectURL(content)
+        downloadLink.download = 'cloneBoom.zip'
+        document.body.appendChild(downloadLink)
+        downloadLink.click()
+        document.body.removeChild(downloadLink)
+      } else {
+        throw new Error('Failed to create folder in zip')
+      }
 
     } catch (error) {
       console.error('Failed to scrape:', error)
@@ -50,7 +51,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 p-6">
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-lg">
         <h1 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">
-         Chin Dapaak Scrapped
+          Chin Dapaak Scraper
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
