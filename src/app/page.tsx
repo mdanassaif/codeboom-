@@ -51,7 +51,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 p-6">
       <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-lg">
         <h1 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">
-          Chin Dapaak Scraper
+          CloneBoom Scraper
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
