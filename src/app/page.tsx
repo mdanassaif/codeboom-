@@ -1,77 +1,110 @@
 'use client'
 
-import { useState } from 'react'
-import axios from 'axios'
-import JSZip from 'jszip'
+import React, { useState } from 'react';
+import axios from 'axios';
+import JSZip from 'jszip';
+import { FaGlobe, FaDownload, FaCog } from 'react-icons/fa';
 
-export default function Home() {
-  const [url, setUrl] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+export default function CloneBoomScraper() {
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [includeScripts, setIncludeScripts] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess(false);
 
     try {
-      const response = await axios.post('/api/scrape', { url })
-      const { html, css } = response.data
+      const response = await axios.post('/api/scrape', { url, includeScripts });
+      const { html, css, cloneBoomCss } = response.data;
 
       const zip = new JSZip();
-      const folder = zip.folder('cloneBoom')
+      zip.file('index.html', html);
+      zip.file('style.css', css);
+      zip.file('cloneboom-styles.css', cloneBoomCss);
 
-      if (folder) {
-        folder.file('index.html', html)
-        folder.file('style.css', css)
+      const content = await zip.generateAsync({ type: 'blob' });
 
-        // Generate zip file
-        const content = await zip.generateAsync({ type: 'blob' })
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(content);
+      downloadLink.download = 'cloneBoom.zip';
+      downloadLink.click();
 
-        // Download
-        const downloadLink = document.createElement('a')
-        downloadLink.href = URL.createObjectURL(content)
-        downloadLink.download = 'cloneBoom.zip'
-        document.body.appendChild(downloadLink)
-        downloadLink.click()
-        document.body.removeChild(downloadLink)
-      } else {
-        throw new Error('Failed to create folder in zip')
-      }
-
+      setSuccess(true);
     } catch (error) {
-      console.error('Failed to scrape:', error)
-      setError('Failed to scrape the website. Please try again.')
+      console.error('Failed to scrape:', error);
+      setError('Failed to scrape the website. Please check the URL and try again.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50 p-6">
-      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-lg">
-        <h1 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">
-          CloneBoom Scraper
+    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-emerald-800 to-teal-600 p-6">
+      <div className="bg-white shadow-2xl rounded-lg p-8 w-full max-w-lg">
+        <h1 className="text-4xl font-extrabold text-emerald-800 mb-6 text-center flex items-center justify-center">
+          <FaGlobe className="mr-2" />
+          CloneBoom
         </h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter website URL"
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
-          />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="relative">
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Enter website URL"
+              className="w-full p-4 border-2 border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition duration-200 ease-in-out"
+              required
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <FaGlobe className="h-5 w-5 text-emerald-500" />
+            </div>
+          </div>
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="includeScripts"
+              checked={includeScripts}
+              onChange={(e) => setIncludeScripts(e.target.checked)}
+              className="mr-2"
+            />
+            <label htmlFor="includeScripts" className="text-sm text-gray-600">Include scripts (may affect cloning accuracy)</label>
+          </div>
           <button 
             type="submit" 
-            className={`w-full py-3 text-white rounded ${loading ? 'bg-blue-300' : 'bg-blue-500 hover:bg-blue-600'} transition duration-200 ease-in-out`}
+            className={`w-full py-4 text-white rounded-lg font-semibold text-lg flex items-center justify-center ${loading ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'} transition duration-200 ease-in-out transform hover:scale-105`}
             disabled={loading}
           >
-            {loading ? 'Scraping...' : 'Scrape and Download'}
+            {loading ? (
+              <>
+                <FaCog className="animate-spin mr-2" />
+                Cloning...
+              </>
+            ) : (
+              <>
+                <FaDownload className="mr-2" />
+                Clone and Download
+              </>
+            )}
           </button>
         </form>
-        {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
+        {error && (
+          <div className="mt-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded" role="alert">
+            <p className="font-bold">Error</p>
+            <p>{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="mt-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded" role="alert">
+            <p className="font-bold">Success!</p>
+            <p>Your cloned website has been downloaded successfully.</p>
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }
